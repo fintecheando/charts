@@ -1,0 +1,8 @@
+apiVersion: v1
+description: Modular and transparent Fineract stack chart supporting Tomcat, Release Cloning, LoadBalancer, Ingress, SSL and lots more!
+name: fineract
+version: 0.0,1
+appVersion: 18.03.01
+home: https://github.com/fintecheando/helm-fineract-stack
+maintainers:
+  - name: fintecheando
