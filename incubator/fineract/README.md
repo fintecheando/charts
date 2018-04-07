@@ -53,7 +53,7 @@ The command removes all the Kubernetes components associated with the chart and 
 To try out one of the [examples](examples/). you can run, e.g. for mifos:
 
 ```console
-$ helm install -f examples/mifos.yaml --name mifos stable/Fineract
+$ helm install -f examples/mifos.yaml --name mifos stable/fineract
 ```
 
 Currently you can try the following examples:
@@ -80,7 +80,7 @@ The above command sets up the chart to create its persistent contents by cloning
 Alternatively, a YAML file that specifies the values for the above parameters can be provided while installing the chart. For example,
 
 ```console
-$ helm install --name my-release -f values.yaml stable/Fineract
+$ helm install --name my-release -f values.yaml stable/fineract
 ```
 
 > **Tip**: You can use the default [values.yaml](values.yaml) file as a template
@@ -172,20 +172,6 @@ The MySQL container is disabled by default, any container with the base image of
 | `mysql.sockets` | Enables communication between MySQL and tomcat via sockets instead of TCP | true |
 | `mysql.resources` | Resource requests/limits | `resources` |
 
-### SFTP Container
-
-SFTP is an instance of the atmoz/sftp container, through which you can access the webroot.
-
-| Parameter | Description | Default |
-| - | - | - |
-| `sftp.enabled` | Enables sftp service | false |
-| `sftp.port` | Port to advertise service in LoadBalancer mode | 22 |
-| `sftp.nodePort` |  Port to advertise service in Ingress mode| _empty_ |
-| `sftp.user` | SFTP User | _empty_ |
-| `sftp.password` | SFTP Password | _empty_ |
-| `sftp.resources` | resource requests/limits | `resources` |
-
-
 ### Default Resources
 
 Default resources are used by all containers which have no custom resources configured.
@@ -232,7 +218,7 @@ If `ingress.enabled` is set to true, the Fineract charts services are made acces
 ### Mifos
 
 
-The Fineract chart offers additional mifos features during the init stage. It supports two modes, normal mode sets up the chart completely automatic by downloading an InfiniteWP backup from google drive, while the other mode gets executed when in manual mode (see: `init.manually`). While in manual mode, the web files and db backup need to be manually downloaded and stashed in the appropriate folders (`/var/www/html` <-- web root, `/var/www/mysql` <-- sql backup). The automatic mode does this automatically. Both modes then import the backup and do some necesssary config file changes. So even in manual mode it is not necessary to import the db backup.
+The Fineract chart offers additional Mifos features during the init stage. It supports two modes, normal mode sets up the chart completely automatic by downloading an InfiniteWP backup from google drive, while the other mode gets executed when in manual mode (see: `init.manually`). While in manual mode, the web files and db backup need to be manually downloaded and stashed in the appropriate folders (`/var/www/html` <-- web root, `/var/www/mysql` <-- sql backup). The automatic mode does this automatically. Both modes then import the backup and do some necesssary config file changes. So even in manual mode it is not necessary to import the db backup.
 
 In development mode everything that gets executed in normal mode will also get executed. 
 
