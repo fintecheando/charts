@@ -2,30 +2,30 @@
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
-  name: {{ template "lamp.fullname" . }}-www
+  name: {{ template "fineract.fullname" . }}-www
   annotations:
     {{- if .Values.ingress.ssl }}
     kubernetes.io/tls-acme: "true"
     {{- end }}
     {{- if .Values.ingress.htpasswdString }}
     ingress.kubernetes.io/auth-type: basic
-    ingress.kubernetes.io/auth-secret: {{ template "lamp.fullname" . }}
+    ingress.kubernetes.io/auth-secret: {{ template "fineract.fullname" . }}
     ingress.kubernetes.io/auth-realm: "Authenticate"
     {{- end }}
 {{ toYaml .Values.ingress.annotations | indent 4 }}
 spec:
   {{- if .Values.ingress.ssl }}
   tls:
-  - secretName: {{ template "lamp.fullname" . }}-tls-www
+  - secretName: {{ template "fineract.fullname" . }}-tls-www
     hosts:
-    - www.{{ template "lamp.domain" . }}
+    - www.{{ template "fineract.domain" . }}
   {{- end }}
   rules:
-  - host: www.{{ template "lamp.domain" . }}
+  - host: www.{{ template "fineract.domain" . }}
     http:
       paths:
       - path: /
         backend:
-          serviceName: {{ template "lamp.fullname" . }}
+          serviceName: {{ template "fineract.fullname" . }}
           servicePort: {{ .Values.service.HTTPPort }}
 {{- end }}

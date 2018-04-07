@@ -1,8 +1,8 @@
-{{- if and .Values.ingress.enabled (or .Values.phpmyadmin.enabled .Values.webdav.enabled) }}
+{{- if and .Values.ingress.enabled (or .Values.tomcatmyadmin.enabled .Values.webdav.enabled) }}
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
-  name: {{ template "lamp.fullname" . }}-service
+  name: {{ template "fineract.fullname" . }}-service
   annotations:
     {{- if .Values.ingress.ssl }}
     kubernetes.io/tls-acme: "true"
@@ -11,32 +11,32 @@ metadata:
 spec:
   {{- if .Values.ingress.ssl }}
   tls:
-  - secretName: {{ template "lamp.fullname" . }}-tls-service
+  - secretName: {{ template "fineract.fullname" . }}-tls-service
     hosts:
-    {{- if .Values.phpmyadmin.enabled }}
-    - {{ .Values.phpmyadmin.subdomain }}.{{ template "lamp.domain" . }}
+    {{- if .Values.tomcatmyadmin.enabled }}
+    - {{ .Values.tomcatmyadmin.subdomain }}.{{ template "fineract.domain" . }}
     {{- end }}
     {{- if .Values.webdav.enabled }}
-    - {{ .Values.webdav.subdomain }}.{{ template "lamp.domain" . }}
+    - {{ .Values.webdav.subdomain }}.{{ template "fineract.domain" . }}
     {{- end }}
   {{- end }}
   rules:
-  {{- if .Values.phpmyadmin.enabled }}
-  - host: {{ .Values.phpmyadmin.subdomain }}.{{ template "lamp.domain" . }}
+  {{- if .Values.tomcatmyadmin.enabled }}
+  - host: {{ .Values.tomcatmyadmin.subdomain }}.{{ template "fineract.domain" . }}
     http:
       paths:
       - path: /
         backend:
-          serviceName: {{ template "lamp.fullname" . }}
-          servicePort: {{ .Values.phpmyadmin.port }}
+          serviceName: {{ template "fineract.fullname" . }}
+          servicePort: {{ .Values.tomcatmyadmin.port }}
   {{- end }}
   {{- if .Values.webdav.enabled }}
-  - host: {{ .Values.webdav.subdomain }}.{{ template "lamp.domain" . }}
+  - host: {{ .Values.webdav.subdomain }}.{{ template "fineract.domain" . }}
     http:
       paths:
       - path: /
         backend:
-          serviceName: {{ template "lamp.fullname" . }}
+          serviceName: {{ template "fineract.fullname" . }}
           servicePort: {{ .Values.webdav.port }}
   {{- end }}
 {{- end }}

@@ -1,9 +1,9 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: {{ template "lamp.fullname" . }}
+  name: {{ template "fineract.fullname" . }}
   labels:
-    app: {{ template "lamp.name" . }}
+    app: {{ template "fineract.name" . }}
     chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
     heritage: {{ .Release.Service }}
     release: {{ .Release.Name }}
@@ -12,7 +12,7 @@ spec:
   template:
     metadata:
       labels:
-        app: {{ template "lamp.name" . }}
+        app: {{ template "fineract.name" . }}
         release: {{ .Release.Name }}
     spec:
       initContainers:
@@ -29,12 +29,12 @@ spec:
         {{- else }}
 {{ toYaml .Values.resources | indent 12 }}
         {{- end }}
-      {{- if and .Values.php.persistentSubpaths (or .Values.persistence.hostPath .Values.persistence.enabled)}}
+      {{- if and .Values.tomcat.persistentSubpaths (or .Values.persistence.hostPath .Values.persistence.enabled)}}
       - name: "init-chown-data"
         image: "busybox"
         command: ["sh", "-c", "chown -R 33:33 /data/web"]
         volumeMounts:
-        {{- range $subPath := .Values.php.persistentSubpaths }}
+        {{- range $subPath := .Values.tomcat.persistentSubpaths }}
         - name: httpd-data
           mountPath: /data/web/{{ $subPath }}
           subPath: {{ $subPath }}
@@ -48,14 +48,14 @@ spec:
         {{- else }}
 {{ toYaml .Values.resources | indent 12 }}
         {{- end }}
-      {{- if .Values.php.copyRoot}}
+      {{- if .Values.tomcat.copyRoot}}
       - name: "copy-root"
-        image: "{{ .Values.php.repository }}:{{ .Values.php.tag }}"
+        image: "{{ .Values.tomcat.repository }}:{{ .Values.tomcat.tag }}"
         imagePullPolicy: "Always"
         command: ["/bin/bash", "-c", "cp -ua /var/www/html/* /data/web/ && cp -ua /var/www/html/.[^.]* /data/web/ && chown 33:33 -R /data/web/"]
         volumeMounts:
-        {{- if and .Values.php.persistentSubpaths (or .Values.persistence.hostPath .Values.persistence.enabled)}}
-        {{- range $subPath := .Values.php.persistentSubpaths }}
+        {{- if and .Values.tomcat.persistentSubpaths (or .Values.persistence.hostPath .Values.persistence.enabled)}}
+        {{- range $subPath := .Values.tomcat.persistentSubpaths }}
         - name: httpd-data
           mountPath: /data/web/{{ $subPath }}
           subPath: {{ $subPath }}
@@ -74,14 +74,14 @@ spec:
         {{- end }}
       {{- end }}
       {{- end }}
-      {{- if and .Values.php.fpmEnabled .Values.php.sockets }}
-      - name: "init-chown-php"
+      {{- if and .Values.tomcat.fpmEnabled .Values.tomcat.sockets }}
+      - name: "init-chown-tomcat"
         image: "busybox"
-        command: ["chown", "-R", "33:33", "/tmp/php"]
+        command: ["chown", "-R", "33:33", "/tmp/tomcat"]
         volumeMounts:
         - name: sockets
-          mountPath: /tmp/php
-          subPath: php
+          mountPath: /tmp/tomcat
+          subPath: tomcat
         resources:
         {{- if .Values.init.resources }}
 {{ toYaml .Values.init.resources | indent 12 }}
@@ -120,8 +120,8 @@ spec:
         imagePullPolicy: {{ .Values.mysql.pullPolicy }}
         command: ["bash", "/init/init_db_clone.sh"]
         volumeMounts:
-        {{- if and .Values.php.persistentSubpaths (or .Values.persistence.hostPath .Values.persistence.enabled)}}
-        {{- range $subPath := .Values.php.persistentSubpaths }}
+        {{- if and .Values.tomcat.persistentSubpaths (or .Values.persistence.hostPath .Values.persistence.enabled)}}
+        {{- range $subPath := .Values.tomcat.persistentSubpaths }}
         - name: httpd-data
           mountPath: /var/www/html/{{ $subPath }}
           subPath: {{ $subPath }}
@@ -146,7 +146,7 @@ spec:
         - name: MYSQL_ROOT_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: {{ template "lamp.fullname" . }}
+              name: {{ template "fineract.fullname" . }}
               key: mysql-root-password
         resources:
         {{- if .Values.init.resources }}
@@ -161,13 +161,13 @@ spec:
         imagePullPolicy: {{ .Values.init.manually.pullPolicy }}
         command: ["bash", "-c", "if [ -z $(ls -A /var/www/html) ]; then echo -e \"touch /done\" > /bin/im-done && chmod +x /bin/im-done && while ! [ -e /done ]; do sleep 5; done; fi"]
         volumeMounts:
-        {{- if or .Values.mysql.sockets .Values.php.ini }}
-          - name: configmap-php
-            mountPath: /etc/php5/cli/conf.d/additional.ini
+        {{- if or .Values.mysql.sockets .Values.tomcat.ini }}
+          - name: configmap-tomcat
+            mountPath: /etc/tomcat5/cli/conf.d/additional.ini
             subPath: additional.ini
         {{- end }}
-        {{- if and .Values.php.persistentSubpaths (or .Values.persistence.hostPath .Values.persistence.enabled)}}
-        {{- range $subPath := .Values.php.persistentSubpaths }}
+        {{- if and .Values.tomcat.persistentSubpaths (or .Values.persistence.hostPath .Values.persistence.enabled)}}
+        {{- range $subPath := .Values.tomcat.persistentSubpaths }}
         - name: httpd-data
           mountPath: /var/www/html/{{ $subPath }}
           subPath: {{ $subPath }}
@@ -178,18 +178,18 @@ spec:
         {{- end }}
           mountPath: /var/www/html
           subPath: web
-        {{- if .Values.php.oldHTTPRoot }}
-        {{- if and .Values.php.persistentSubpaths (or .Values.persistence.hostPath .Values.persistence.enabled)}}
-        {{- range $subPath := .Values.php.persistentSubpaths }}
+        {{- if .Values.tomcat.oldHTTPRoot }}
+        {{- if and .Values.tomcat.persistentSubpaths (or .Values.persistence.hostPath .Values.persistence.enabled)}}
+        {{- range $subPath := .Values.tomcat.persistentSubpaths }}
         - name: httpd-data
-          mountPath: {{ .Values.php.oldHTTPRoot }}/{{ $subPath }}
+          mountPath: {{ .Values.tomcat.oldHTTPRoot }}/{{ $subPath }}
           subPath: {{ $subPath }}
         {{- end }}
         - name: httpd-data-nonpersistent
         {{- else }}
         - name: httpd-data
         {{- end }}
-          mountPath: {{ .Values.php.oldHTTPRoot }}
+          mountPath: {{ .Values.tomcat.oldHTTPRoot }}
           subPath: web
         {{- end }}
         - name: httpd-data
@@ -202,7 +202,7 @@ spec:
         - name: MYSQL_ROOT_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: {{ template "lamp.fullname" . }}
+              name: {{ template "fineract.fullname" . }}
               key: mysql-root-password
         resources:
         {{- if .Values.init.resources }}
@@ -211,15 +211,15 @@ spec:
 {{ toYaml .Values.resources | indent 12 }}
         {{- end }}
       {{- end }}
-      {{- if .Values.wordpress.enabled }}
+      {{- if .Values.mifos.enabled }}
       {{- if not .Values.init.clone.release }}
       - name: init-wp
         image: lead4good/init-wp
         imagePullPolicy: Always
         command: ["bash", "-c", "chown -R www-data:www-data /var/www/ && su -s /bin/bash -c \"bash /init/init_wp.sh\" www-data"]
         volumeMounts:
-        {{- if and .Values.php.persistentSubpaths (or .Values.persistence.hostPath .Values.persistence.enabled)}}
-        {{- range $subPath := .Values.php.persistentSubpaths }}
+        {{- if and .Values.tomcat.persistentSubpaths (or .Values.persistence.hostPath .Values.persistence.enabled)}}
+        {{- range $subPath := .Values.tomcat.persistentSubpaths }}
         - name: httpd-data
           mountPath: /var/www/html/{{ $subPath }}
           subPath: {{ $subPath }}
@@ -236,7 +236,7 @@ spec:
         - name: init
           mountPath: /init
         env:
-        {{- if .Values.wordpress.develop.delete_uploads }}
+        {{- if .Values.mifos.develop.delete_uploads }}
         - name: DELETE_UPLOADS
           value: "1"
         {{- end }}
@@ -264,23 +264,23 @@ spec:
         - name: MANUAL_INIT
           value: "true"
         {{- end }}
-        {{- if .Values.wordpress.develop.enabled }}
+        {{- if .Values.mifos.develop.enabled }}
         - name: DEVELOPMENT
           value: "true"
         {{- end }}
         - name: GDRIVE_FOLDER
-          {{- if .Values.wordpress.gdriveFolder }}
-          value: {{ .Values.wordpress.gdriveFolder }}
+          {{- if .Values.mifos.gdriveFolder }}
+          value: {{ .Values.mifos.gdriveFolder }}
           {{- else }}
-          value: {{ required "Please specify the domain of the wordpress backup at .Values.wordpress.domain" .Values.wordpress.domain }}
+          value: {{ required "Please specify the domain of the mifos backup at .Values.mifos.domain" .Values.mifos.domain }}
           {{- end }}
         - name: RTOKEN
           valueFrom:
             secretKeyRef:
-              name: {{ template "lamp.fullname" . }}
+              name: {{ template "fineract.fullname" . }}
               key: gdrive-rtoken
         - name: WEB_DOMAIN
-          value: {{ required "Please specify the domain of the wordpress backup at .Values.wordpress.domain" .Values.wordpress.domain }}
+          value: {{ required "Please specify the domain of the mifos backup at .Values.mifos.domain" .Values.mifos.domain }}
         resources:
         {{- if .Values.init.resources }}
 {{ toYaml .Values.init.resources | indent 12 }}
@@ -293,13 +293,13 @@ spec:
         imagePullPolicy: Always
         command: ["bash", "-c", "bash /init/init_wp_db.sh"]
         volumeMounts:
-        {{- if or .Values.mysql.sockets .Values.php.ini }}
-        - name: configmap-php
-          mountPath: /etc/php5/cli/conf.d/additional.ini
+        {{- if or .Values.mysql.sockets .Values.tomcat.ini }}
+        - name: configmap-tomcat
+          mountPath: /etc/tomcat5/cli/conf.d/additional.ini
           subPath: "additional.ini"
         {{- end }}
-        {{- if and .Values.php.persistentSubpaths (or .Values.persistence.hostPath .Values.persistence.enabled)}}
-        {{- range $subPath := .Values.php.persistentSubpaths }}
+        {{- if and .Values.tomcat.persistentSubpaths (or .Values.persistence.hostPath .Values.persistence.enabled)}}
+        {{- range $subPath := .Values.tomcat.persistentSubpaths }}
         - name: httpd-data
           mountPath: /var/www/html/{{ $subPath }}
           subPath: {{ $subPath }}
@@ -310,18 +310,18 @@ spec:
         {{- end }}
           mountPath: /var/www/html
           subPath: web
-        {{- if .Values.php.oldHTTPRoot }}
-        {{- if and .Values.php.persistentSubpaths (or .Values.persistence.hostPath .Values.persistence.enabled)}}
-        {{- range $subPath := .Values.php.persistentSubpaths }}
+        {{- if .Values.tomcat.oldHTTPRoot }}
+        {{- if and .Values.tomcat.persistentSubpaths (or .Values.persistence.hostPath .Values.persistence.enabled)}}
+        {{- range $subPath := .Values.tomcat.persistentSubpaths }}
         - name: httpd-data
-          mountPath: {{ .Values.php.oldHTTPRoot }}/{{ $subPath }}
+          mountPath: {{ .Values.tomcat.oldHTTPRoot }}/{{ $subPath }}
           subPath: {{ $subPath }}
         {{- end }}
         - name: httpd-data-nonpersistent
         {{- else }}
         - name: httpd-data
         {{- end }}
-          mountPath: {{ .Values.php.oldHTTPRoot }}
+          mountPath: {{ .Values.tomcat.oldHTTPRoot }}
           subPath: web
         {{- end }}
         - name: httpd-data
@@ -333,11 +333,11 @@ spec:
         - name: init
           mountPath: /init
         env:
-        {{- if .Values.wordpress.develop.enabled }}
+        {{- if .Values.mifos.develop.enabled }}
         - name: WEB_TEST_DOMAIN
-          value: {{ template "lamp.domain" . }}
+          value: {{ template "fineract.domain" . }}
         - name: WEB_DOMAIN
-          value: {{ required "Please specify the domain of the wordpress backup at .Values.wordpress.domain" .Values.wordpress.domain }}
+          value: {{ required "Please specify the domain of the mifos backup at .Values.mifos.domain" .Values.mifos.domain }}
         {{- end }}
         {{ if .Values.ingress.ssl }}
         - name: SSL_ENABLED
@@ -350,7 +350,7 @@ spec:
         - name: MYSQL_ROOT_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: {{ template "lamp.fullname" . }}
+              name: {{ template "fineract.fullname" . }}
               key: mysql-root-password
         resources:
         {{- if .Values.init.resources }}
@@ -360,15 +360,15 @@ spec:
         {{- end }}
       {{- end }}
       containers:
-      {{- if .Values.php.fpmEnabled }}
+      {{- if .Values.tomcat.fpmEnabled }}
       - name: "httpd"
         image: "httpd:2.4.29-alpine"
         imagePullPolicy: "Always"
         ports:
         - containerPort: 80
         volumeMounts:
-        {{- if and .Values.php.persistentSubpaths (or .Values.persistence.hostPath .Values.persistence.enabled)}}
-        {{- range $subPath := .Values.php.persistentSubpaths }}
+        {{- if and .Values.tomcat.persistentSubpaths (or .Values.persistence.hostPath .Values.persistence.enabled)}}
+        {{- range $subPath := .Values.tomcat.persistentSubpaths }}
         - name: httpd-data
           mountPath: /var/www/html/{{ $subPath }}
           subPath: {{ $subPath }}
@@ -379,14 +379,14 @@ spec:
         {{- end }}
           mountPath: /var/www/html
           subPath: web
-        {{- if .Values.php.sockets }}
-        - mountPath: /var/run/php
+        {{- if .Values.tomcat.sockets }}
+        - mountPath: /var/run/tomcat
           name: sockets
-          subPath: php
+          subPath: tomcat
         {{- end }}
         - mountPath: /usr/local/apache2/conf/extra/httpd-vhosts.conf
           name: httpd-config
-          subPath: httpd-vhosts{{ if .Values.php.sockets }}-socket{{ end }}.conf
+          subPath: httpd-vhosts{{ if .Values.tomcat.sockets }}-socket{{ end }}.conf
         - mountPath: /usr/local/apache2/conf/httpd.conf
           name: httpd-config
           subPath: httpd.conf
@@ -396,34 +396,34 @@ spec:
         {{- else }}
 {{ toYaml .Values.resources | indent 12 }}
         {{- end }}
-      - name: "php"
-        {{- if .Values.php.repository }}
-        image: "{{ .Values.php.repository }}:{{ .Values.php.tag }}"
+      - name: "tomcat"
+        {{- if .Values.tomcat.repository }}
+        image: "{{ .Values.tomcat.repository }}:{{ .Values.tomcat.tag }}"
         {{- else }}
-        image: "php:{{ .Values.php.version }}-fpm"
+        image: "tomcat:{{ .Values.tomcat.version }}-fpm"
         {{- end }}
-        {{- if not .Values.php.sockets }}
+        {{- if not .Values.tomcat.sockets }}
         ports:
         - containerPort: 9000
         {{- end }}
       {{- else }}
-      - name: "httpdphp"
-        {{- if .Values.php.repository }}
-        image: "{{ .Values.php.repository }}:{{ .Values.php.tag }}"
+      - name: "httpdtomcat"
+        {{- if .Values.tomcat.repository }}
+        image: "{{ .Values.tomcat.repository }}:{{ .Values.tomcat.tag }}"
         {{- else }}
-        image: "php:{{ .Values.php.version }}-apache"
+        image: "tomcat:{{ .Values.tomcat.version }}-apache"
         {{- end }}
         ports:
         - containerPort: 80
       {{- end }}
-        imagePullPolicy: {{ .Values.php.pullPolicy }}
-        {{- if .Values.php.envVars }}
+        imagePullPolicy: {{ .Values.tomcat.pullPolicy }}
+        {{- if .Values.tomcat.envVars }}
         env:
-{{ toYaml .Values.php.envVars | indent 8 }}
+{{ toYaml .Values.tomcat.envVars | indent 8 }}
         {{- end }}
         volumeMounts:
-        {{- if and .Values.php.persistentSubpaths (or .Values.persistence.hostPath .Values.persistence.enabled)}}
-        {{- range $subPath := .Values.php.persistentSubpaths }}
+        {{- if and .Values.tomcat.persistentSubpaths (or .Values.persistence.hostPath .Values.persistence.enabled)}}
+        {{- range $subPath := .Values.tomcat.persistentSubpaths }}
         - name: httpd-data
           mountPath: /var/www/html/{{ $subPath }}
           subPath: {{ $subPath }}
@@ -437,26 +437,26 @@ spec:
         - name: httpd-data
           mountPath: /var/www/mysql
           subPath: mysql
-        {{- if .Values.php.oldHTTPRoot }}
-        {{- if and .Values.php.persistentSubpaths (or .Values.persistence.hostPath .Values.persistence.enabled)}}
-        {{- range $subPath := .Values.php.persistentSubpaths }}
+        {{- if .Values.tomcat.oldHTTPRoot }}
+        {{- if and .Values.tomcat.persistentSubpaths (or .Values.persistence.hostPath .Values.persistence.enabled)}}
+        {{- range $subPath := .Values.tomcat.persistentSubpaths }}
         - name: httpd-data
-          mountPath: {{ .Values.php.oldHTTPRoot }}/{{ $subPath }}
+          mountPath: {{ .Values.tomcat.oldHTTPRoot }}/{{ $subPath }}
           subPath: {{ $subPath }}
         {{- end }}
         - name: httpd-data-nonpersistent
         {{- else }}
         - name: httpd-data
         {{- end }}
-          mountPath: {{ .Values.php.oldHTTPRoot }}
+          mountPath: {{ .Values.tomcat.oldHTTPRoot }}
           subPath: web
         {{- end }}
-        {{- if and .Values.php.fpmEnabled .Values.php.sockets }}
-        - mountPath: /var/run/php
+        {{- if and .Values.tomcat.fpmEnabled .Values.tomcat.sockets }}
+        - mountPath: /var/run/tomcat
           name: sockets
-          subPath: php
-        - mountPath: /usr/local/etc/php-fpm.d/zz-docker.conf
-          name: configmap-php
+          subPath: tomcat
+        - mountPath: /usr/local/etc/tomcat-fpm.d/zz-docker.conf
+          name: configmap-tomcat
           subPath: zz-docker.conf
         {{- end }}
         {{- if .Values.mysql.sockets }}
@@ -464,14 +464,14 @@ spec:
           name: sockets
           subPath: mysqld
         {{- end }}
-        {{- if or .Values.php.ini .Values.mysql.sockets }}
-        - name: configmap-php
-          mountPath: /usr/local/etc/php/conf.d/additional.ini
+        {{- if or .Values.tomcat.ini .Values.mysql.sockets }}
+        - name: configmap-tomcat
+          mountPath: /usr/local/etc/tomcat/conf.d/additional.ini
           subPath: additional.ini
         {{- end }}
         resources:
-        {{- if .Values.php.resources }}
-{{ toYaml .Values.php.resources | indent 12 }}
+        {{- if .Values.tomcat.resources }}
+{{ toYaml .Values.tomcat.resources | indent 12 }}
         {{- else }}
 {{ toYaml .Values.resources | indent 12 }}
         {{- end }}
@@ -483,24 +483,24 @@ spec:
         - name: MYSQL_ROOT_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: {{ template "lamp.fullname" . }}
+              name: {{ template "fineract.fullname" . }}
               key: mysql-root-password
         {{- if and .Values.mysql.user .Values.mysql.password }}
         - name: MYSQL_USER
           valueFrom:
             secretKeyRef:
-              name: {{ template "lamp.fullname" . }}
+              name: {{ template "fineract.fullname" . }}
               key: mysql-user
         - name: MYSQL_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: {{ template "lamp.fullname" . }}
+              name: {{ template "fineract.fullname" . }}
               key: mysql-password
         {{- if .Values.mysql.database }}
         - name: MYSQL_DATABASE
           valueFrom:
             secretKeyRef:
-              name: {{ template "lamp.fullname" . }}
+              name: {{ template "fineract.fullname" . }}
               key: mysql-database
         {{- end }}
         {{- end }}
@@ -530,16 +530,16 @@ spec:
         - name: SFTP_USER
           valueFrom:
             secretKeyRef:
-              name: {{ template "lamp.fullname" . }}
+              name: {{ template "fineract.fullname" . }}
               key: sftp-user
         - name: SFTP_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: {{ template "lamp.fullname" . }}
+              name: {{ template "fineract.fullname" . }}
               key: sftp-password
         volumeMounts:
-        {{- if and .Values.php.persistentSubpaths (or .Values.persistence.hostPath .Values.persistence.enabled)}}
-        {{- range $subPath := .Values.php.persistentSubpaths }}
+        {{- if and .Values.tomcat.persistentSubpaths (or .Values.persistence.hostPath .Values.persistence.enabled)}}
+        {{- range $subPath := .Values.tomcat.persistentSubpaths }}
         - name: httpd-data
           mountPath: /home/{{ .Values.sftp.user }}/web/{{ $subPath }}
           subPath: {{ $subPath }}
@@ -565,18 +565,18 @@ spec:
         - name: WEBDAV_USERNAME
           valueFrom:
             secretKeyRef:
-              name: {{ template "lamp.fullname" . }}
+              name: {{ template "fineract.fullname" . }}
               key: webdav-user
         - name: WEBDAV_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: {{ template "lamp.fullname" . }}
+              name: {{ template "fineract.fullname" . }}
               key: webdav-password
         ports:
         - containerPort: 8001
         volumeMounts:
-        {{- if and .Values.php.persistentSubpaths (or .Values.persistence.hostPath .Values.persistence.enabled)}}
-        {{- range $subPath := .Values.php.persistentSubpaths }}
+        {{- if and .Values.tomcat.persistentSubpaths (or .Values.persistence.hostPath .Values.persistence.enabled)}}
+        {{- range $subPath := .Values.tomcat.persistentSubpaths }}
         - name: httpd-data
           mountPath: /var/www/{{ $subPath }}
           subPath: {{ $subPath }}
@@ -610,8 +610,8 @@ spec:
         - name: GIT_SYNC_DEST
           value: /git
         volumeMounts:
-        {{- if and .Values.php.persistentSubpaths (or .Values.persistence.hostPath .Values.persistence.enabled)}}
-        {{- range $subPath := .Values.php.persistentSubpaths }}
+        {{- if and .Values.tomcat.persistentSubpaths (or .Values.persistence.hostPath .Values.persistence.enabled)}}
+        {{- range $subPath := .Values.tomcat.persistentSubpaths }}
         - name: httpd-data
           mountPath: /git/{{ $subPath }}
           subPath: {{ $subPath }}
@@ -637,12 +637,12 @@ spec:
         - name: SYNC_USER
           valueFrom:
             secretKeyRef:
-              name: {{ template "lamp.fullname" . }}
+              name: {{ template "fineract.fullname" . }}
               key: svn-user
         - name: SYNC_PASS
           valueFrom:
             secretKeyRef:
-              name: {{ template "lamp.fullname" . }}
+              name: {{ template "fineract.fullname" . }}
               key: svn-password
         - name: SYNC_URL
           value: {{required "Please specify the SVN repository at .Values.svn.repoURL" .Values.svn.repoURL }}
@@ -651,8 +651,8 @@ spec:
           value: "true"
         {{- end }}
         volumeMounts:
-        {{- if and .Values.php.persistentSubpaths (or .Values.persistence.hostPath .Values.persistence.enabled)}}
-        {{- range $subPath := .Values.php.persistentSubpaths }}
+        {{- if and .Values.tomcat.persistentSubpaths (or .Values.persistence.hostPath .Values.persistence.enabled)}}
+        {{- range $subPath := .Values.tomcat.persistentSubpaths }}
         - name: httpd-data
           mountPath: /svn/{{ $subPath }}
           subPath: {{ $subPath }}
@@ -670,24 +670,24 @@ spec:
 {{ toYaml .Values.resources | indent 12 }}
         {{- end }}
       {{ end }}
-      {{ if .Values.phpmyadmin.enabled }}
-      - image: phpmyadmin/phpmyadmin
-        name: phpmyadmin
-        command: [sh, -c, sed -i 's/listen\ 80/listen 8080/g' /etc/nginx.conf && /run.sh phpmyadmin]
+      {{ if .Values.tomcatmyadmin.enabled }}
+      - image: tomcatmyadmin/tomcatmyadmin
+        name: tomcatmyadmin
+        command: [sh, -c, sed -i 's/listen\ 80/listen 8080/g' /etc/nginx.conf && /run.sh tomcatmyadmin]
         env:
         - name: PMA_HOST
           value: 127.0.0.1
         ports:
         - {containerPort: 8080}
         resources:
-        {{- if .Values.phpmyadmin.resources }}
-{{ toYaml .Values.phpmyadmin.resources | indent 12 }}
+        {{- if .Values.tomcatmyadmin.resources }}
+{{ toYaml .Values.tomcatmyadmin.resources | indent 12 }}
         {{- else }}
 {{ toYaml .Values.resources | indent 12 }}
         {{- end }}
       {{ end }}
       volumes:
-      {{- if and .Values.php.persistentSubpaths (or .Values.persistence.hostPath .Values.persistence.enabled)}}
+      {{- if and .Values.tomcat.persistentSubpaths (or .Values.persistence.hostPath .Values.persistence.enabled)}}
       - name: httpd-data-nonpersistent
         emptyDir: {}
       {{- end }}
@@ -697,25 +697,25 @@ spec:
           path: {{ .Values.persistence.hostPath }}
         {{- else }}{{- if .Values.persistence.enabled }}
         persistentVolumeClaim:
-          claimName: {{ template "lamp.fullname" . }}
+          claimName: {{ template "fineract.fullname" . }}
         {{- else }}
         emptyDir: {}
         {{- end }}
       {{- end }}
-      {{- if or .Values.mysql.sockets .Values.php.sockets }}
+      {{- if or .Values.mysql.sockets .Values.tomcat.sockets }}
       - name: sockets
         emptyDir: {}
       {{- end }}
-      {{- if or .Values.mysql.sockets ( or ( and .Values.php.fpmEnabled .Values.php.sockets) .Values.php.ini ) }}
-      - configMap: {name: {{template "lamp.fullname" .}}-php }
-        name: configmap-php
+      {{- if or .Values.mysql.sockets ( or ( and .Values.tomcat.fpmEnabled .Values.tomcat.sockets) .Values.tomcat.ini ) }}
+      - configMap: {name: {{template "fineract.fullname" .}}-tomcat }
+        name: configmap-tomcat
       {{- end }}
-      {{- if or .Values.init.clone.release .Values.wordpress.enabled }}
-      - configMap: {name: {{template "lamp.fullname" .}}-init }
+      {{- if or .Values.init.clone.release .Values.mifos.enabled }}
+      - configMap: {name: {{template "fineract.fullname" .}}-init }
         name: init
       {{- end }}
-      {{- if .Values.php.fpmEnabled }}
-      - configMap: {name: {{template "lamp.fullname" .}}-httpd }
+      {{- if .Values.tomcat.fpmEnabled }}
+      - configMap: {name: {{template "fineract.fullname" .}}-httpd }
         name: httpd-config
       {{- end }}
       {{- if .Values.init.clone.release }}

@@ -6,12 +6,7 @@ mysql:
 
 tomcat:
   repository: tomcat
-  tag: 7-fpm
-  persistentSubpaths:
-  - modules
-  - profiles
-  - sites
-  - themes
+  tag: latest
   # copies web root to persistent storage upon creation. remember to disable on subsequent
   # upgrades of the chart, otherwise your storage might get overwritten...
   copyRoot: true
