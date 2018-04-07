@@ -1,4 +1,4 @@
-{{- if or .Values.mysql.sockets ( or .Values.tomcat.fpmEnabled .Values.tomcat.ini ) }}
+{{- if or .Values.mysql.sockets ( or .Values.tomcat.Enabled .Values.tomcat.ini ) }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -22,7 +22,7 @@ data:
     [global]
     daemonize = no
     [www]
-    listen = /var/run/tomcat/tomcat-fpm.sock
+    listen = /var/run/tomcat/tomcat.sock
     listen.mode = 0666
   {{- end }}
 {{- end }}

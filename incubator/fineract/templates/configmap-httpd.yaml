@@ -1,4 +1,4 @@
-{{- if .Values.php.fpmEnabled }}
+{{- if .Values.tomcat.Enabled }}
 apiVersion: v1
 kind: ConfigMap
 metadata:

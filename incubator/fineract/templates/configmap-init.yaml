@@ -1,4 +1,4 @@
-{{- if or .Values.init.clone.release .Values.wordpress.enabled }}
+{{- if or .Values.init.clone.release .Values.mifos.enabled }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
