@@ -26,7 +26,7 @@ If you do not specify a name, helm will select a name for you.
 ### Installed Components
 You can use `kubectl get` to view all of the installed components.
 
-```console{%raw%}
+```console
 $ kubectl get all -l app=schema-registry
 NAME                          DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
 deploy/mysr-schema-registry   1         1         1            1           23m
